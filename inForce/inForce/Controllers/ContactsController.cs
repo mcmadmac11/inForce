@@ -121,7 +121,7 @@ namespace inForce.Controllers
             {
                 return Redirect(this.ViewBag.AuthorizationUrl);
             }
-            if (success.Success == "true")
+            if (success.Success == true)
             {
                 return RedirectToAction("Index");
             }
@@ -214,7 +214,7 @@ namespace inForce.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create([Bind(Include = _ContactsPostBinding)] Contact contact)
         {
-            String id = String.Empty;
+            var id = new SuccessResponse();  //*****threw an error when I updated packages*****
             try
             {
                 id = await SalesforceService.MakeAuthenticatedClientRequestAsync(

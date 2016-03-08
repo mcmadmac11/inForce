@@ -6,6 +6,9 @@ using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.Google;
 using Owin;
 using inForce.Models;
+using System.Configuration;
+using Microsoft.Owin.Security.Facebook;
+using System.Threading.Tasks;
 
 namespace inForce
 {
@@ -54,9 +57,24 @@ namespace inForce
             //   consumerKey: "",
             //   consumerSecret: "");
 
-            //app.UseFacebookAuthentication(
-            //   appId: "",
-            //   appSecret: "");
+            //app.UseFacebookAuthentication("1732382100314840", "d16cd2442d35c5f7de79181014c15e6a");if below method doesn't work, <= uncomment
+            var facebookOption = new FacebookAuthenticationOptions
+            {
+                AppId = "1732382100314840", 
+                AppSecret = "d16cd2442d35c5f7de79181014c15e6a",
+                Provider = new FacebookAuthenticationProvider()
+                {
+                    OnAuthenticated = (context) =>
+                    {
+                        context.Identity.AddClaim(new System.Security.Claims.Claim("FacebookAccessToken", context.AccessToken));
+                        return Task.FromResult(0);
+                    }
+                },            
+                SignInAsAuthenticationType = DefaultAuthenticationTypes.ExternalCookie,
+                SendAppSecretProof = true
+            };
+            facebookOption.Scope.Add("email user_friends user_likes user_photos");
+            app.UseFacebookAuthentication(facebookOption);
 
             app.UseGoogleAuthentication(new GoogleOAuth2AuthenticationOptions()
             {

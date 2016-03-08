@@ -333,6 +333,12 @@ namespace inForce.Controllers
             switch (result)
             {
                 case SignInStatus.Success:
+                    var user = await UserManager.FindAsync(loginInfo.Login);
+                    if (user != null)
+                    {
+                        await StoreFacebookAuthToken(user);
+                        await SignInAsync(user, isPersistent: false);
+                    }
                     return RedirectToLocal(returnUrl);
                 case SignInStatus.LockedOut:
                     return View("Lockout");
@@ -344,6 +350,31 @@ namespace inForce.Controllers
                     ViewBag.ReturnUrl = returnUrl;
                     ViewBag.LoginProvider = loginInfo.Login.LoginProvider;
                     return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel { Email = loginInfo.Email });
+            }
+        }
+
+        private async Task SignInAsync(ApplicationUser user, bool isPersistent)
+        {
+            AuthenticationManager.SignOut(DefaultAuthenticationTypes.ExternalCookie);
+            AuthenticationManager.SignIn(new AuthenticationProperties() {IsPersistent = isPersistent },await user.GenerateUserIdentityAsync(UserManager));
+        }
+
+        private async Task StoreFacebookAuthToken(ApplicationUser user)
+        {
+            var ClaimsIdentity = await AuthenticationManager.GetExternalIdentityAsync(DefaultAuthenticationTypes.ExternalCookie);
+            if (ClaimsIdentity != null)
+            {
+                var currentClaims = await UserManager.GetClaimsAsync(user.Id);
+                var facebookAccessToken = ClaimsIdentity.FindAll("FacebookAccessToken").First();
+                if (currentClaims.Count() <= 0)
+                {
+                    await UserManager.AddClaimAsync(user.Id, facebookAccessToken);
+                }
+                else
+                {
+                    await UserManager.RemoveClaimAsync(user.Id, currentClaims[0]);
+                    await UserManager.AddClaimAsync(user.Id, facebookAccessToken);
+                }
             }
         }
 
